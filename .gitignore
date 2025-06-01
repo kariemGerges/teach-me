@@ -30,6 +30,35 @@ yarn-error.*
 .DS_Store
 *.pem
 
+.env
+# dotenv
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# dotenv variables
+.env.development
+.env.test
+.env.production
+# dotenv variables for Expo
+.env.expo
+.env.expo.local
+# dotenv variables for React Native
+.env.react-native
+.env.react-native.local
+# dotenv variables for web
+.env.web
+.env.web.local
+# dotenv variables for Node.js
+.env.node
+.env.node.local
+# dotenv variables for Next.js
+.env.next
+# dotenv variables for Nuxt.js
+.env.nuxt
+# dotenv variables for Gatsby
+.env.gatsby 
+
 # local env files
 .env*.local
 
