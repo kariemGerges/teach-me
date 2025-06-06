@@ -30,6 +30,8 @@ if (
     !FIREBASE_MEASUREMENT_ID
 ) {
     throw new Error('Missing Firebase configuration in environment variables');
+} else {
+    console.log('Firebase configuration loaded successfully');
 }
 // Check if the environment variables are defined
 
