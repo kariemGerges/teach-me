@@ -1,12 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
-
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Animated,
     Dimensions,
     Easing,
-    Linking,
     StatusBar,
     StyleSheet,
     Text,
@@ -14,6 +12,7 @@ import {
     View,
 } from 'react-native';
 
+// Firestore Services
 import { auth, firestoreDb } from '@/services/firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -21,16 +20,14 @@ import { doc, getDoc } from 'firebase/firestore';
 // Components
 import Loading from '@/components/Loading';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 interface RoleSelectionScreenProps {
     onKidSelected?: () => void;
-    parentTeacherUrl?: string;
 }
 
 const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
     onKidSelected,
-    parentTeacherUrl = 'https://teachme-parents.com',
 }) => {
     const router = useRouter();
     const [userLoading, setUserLoading] = useState(true);
@@ -47,12 +44,12 @@ const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
                     // User data exists, navigate to role selected screen
                     const profile = userDoc.data();
                     if (
-                        profile.role === 'parent' ||
-                        profile.role === 'teacher'
+                        profile.type === 'parent' ||
+                        profile.type === 'teacher'
                     ) {
-                        router.replace('/');
-                    } else if (profile.role === 'kid') {
-                        router.replace('/');
+                        router.replace('/screens/parentTeacherDashboard');
+                    } else if (profile.type === 'kid') {
+                        router.replace('/(tabs)/explore');
                     } else {
                         // User data does not exist, navigate to profile creation
                         router.push('/');
@@ -66,9 +63,9 @@ const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [router]);
 
-    // State to manage selected role
+    // State to manage selected type
     const [selectedRole, setSelectedRole] = useState<string | null>(null);
     // Animation values
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -154,7 +151,14 @@ const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
             sparkleAnimation3.stop();
             arrowAnimation.stop();
         };
-    }, []);
+    }, [
+        arrowBounce,
+        fadeAnim,
+        slideAnim,
+        sparkleRotate1,
+        sparkleRotate2,
+        sparkleRotate3,
+    ]);
 
     useEffect(() => {
         // Button entrance animation
@@ -173,7 +177,7 @@ const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
                 useNativeDriver: true,
             }).start();
         }
-    }, [selectedRole]);
+    }, [selectedRole, buttonScale]);
 
     const handleRolePress = (role: 'kid' | 'parent') => {
         setSelectedRole(role);
@@ -204,8 +208,9 @@ const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
     const handleGetStarted = () => {
         if (selectedRole === 'kid') {
             onKidSelected?.();
+            router.push('/(auth)/kidsLogin');
         } else if (selectedRole === 'parent') {
-            Linking.openURL(parentTeacherUrl);
+            router.push('/(auth)/parentSignup');
         }
     };
 
@@ -314,7 +319,6 @@ const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
                         >
                             <View style={styles.cardContent}>
                                 <View style={styles.kidAvatar}>
-                                    {/* <Text style={styles.avatarEmoji}>🧒</Text> */}
                                     <Image
                                         source={require('@/assets/images/kids.png')}
                                         style={styles.kidAvatar}
@@ -356,7 +360,6 @@ const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
                                     </Text>
                                 </View>
                                 <View style={styles.parentAvatar}>
-                                    {/* <Text style={styles.avatarEmoji}>👨‍🏫</Text> */}
                                     <Image
                                         source={require('@/assets/images/teacher.png')}
                                         style={styles.parentAvatar}

@@ -53,10 +53,11 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const auth =
     getApps().length === 0
         ? initializeAuth(app, {
-              persistence: getReactNativePersistence(AsyncStorage),
+            persistence: getReactNativePersistence(AsyncStorage),
           })
         : getAuth(app);
 
+// auth = getAuth(app);
 // Initialize Firestore
 const firestoreDb = getFirestore(app);
 
