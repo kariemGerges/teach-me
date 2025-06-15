@@ -37,5 +37,6 @@ export const userProfileSchema = z.object({
                 .optional(),
         })
         .optional(),
+    provider: z.enum(['google', 'email', 'apple', 'facebook']).optional(),
     rewards: z.array(z.string()).optional(),
 });

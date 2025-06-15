@@ -1,4 +1,3 @@
-
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -25,6 +24,7 @@ import { UserProfile } from '@/types/user';
 
 // import components
 import FirebaseError from '@/components/ui/FirebaseError';
+import SignWithGoogle from '@/components/ui/SignWithGoogle';
 
 interface SignupScreenProps {
     navigation: any;
@@ -188,6 +188,7 @@ const ParentSignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
                         colorContrast: false,
                     },
                 },
+                provider: 'email',
                 progress: {
                     math: { level: 0, stars: 0 },
                     science: { level: 0, stars: 0 },
@@ -237,21 +238,6 @@ const ParentSignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
             }
         } finally {
             setIsLoading(false);
-        }
-    };
-
-    // Function to handle Google signup
-    const handleGoogleSignup = async () => {
-        try {
-            // Add Google Sign-In logic here
-            console.log('Google signup pressed');
-            Alert.alert(
-                'Google Signup',
-                'Google signup functionality would be implemented here'
-            );
-        } catch (error) {
-            Alert.alert('error', 'Google signup failed. Please try again.');
-            console.error('Google signup error:', error);
         }
     };
 
@@ -401,14 +387,7 @@ const ParentSignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
                             <View style={styles.divider} />
                         </View>
 
-                        <TouchableOpacity
-                            style={styles.googleButton}
-                            onPress={handleGoogleSignup}
-                        >
-                            <Text style={styles.googleButtonText}>
-                                Continue with Google
-                            </Text>
-                        </TouchableOpacity>
+                        <SignWithGoogle />
                     </View>
 
                     <View style={styles.footer}>
@@ -532,23 +511,7 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: '#8E8E93',
     },
-    googleButton: {
-        height: 50,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#E5E5EA',
-        shadowColor: '#000000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
-    },
+
     googleButtonText: {
         fontSize: 17,
         fontWeight: '500',

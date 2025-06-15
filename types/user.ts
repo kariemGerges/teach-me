@@ -20,6 +20,7 @@ export interface UserProfile {
             colorContrast?: boolean;
         };
     };
+    provider?: 'google' | 'email' | 'apple' | 'facebook';
     // Progress and rewards can also be subCollections if you scale big!
     progress?: {
         math?: { level: number; stars: number };

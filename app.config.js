@@ -4,6 +4,7 @@ export default {
     expo: {
         name: 'teach-me',
         slug: 'teach-me',
+        owner: 'kariemgerges',
         version: '1.0.0',
         orientation: 'portrait',
         icon: './assets/images/icon.png',
@@ -19,6 +20,13 @@ export default {
                 process.env.FIREBASE_MESSAGING_SENDER_ID,
             FIREBASE_APP_ID: process.env.FIREBASE_APP_ID,
             FIREBASE_MEASUREMENT_ID: process.env.FIREBASE_MEASUREMENT_ID,
+            GOOGLE_WEB_CLIENT_ID: process.env.GOOGLE_WEB_CLIENT_ID,
+            GOOGLE_EXPO_CLIENT_ID: process.env.GOOGLE_EXPO_CLIENT_ID,
+            GOOGLE_ANDROID_CLIENT_ID: process.env.GOOGLE_EXPO_CLIENT_ID_ANDROID,
+            GOOGLE_IOS_CLIENT_ID: process.env.GOOGLE_EXPO_CLIENT_ID_IOS,
+        },
+        eas: {
+            projectId: '212209f1-4cc3-45a7-a2b4-f0ebc8a5e177',
         },
         ios: {
             supportsTablet: true,
@@ -28,6 +36,7 @@ export default {
                 foregroundImage: './assets/images/adaptive-icon.png',
                 backgroundColor: '#ffffff',
             },
+            package: 'com.kariemgerges.teachme',
             edgeToEdgeEnabled: true,
         },
         web: {
