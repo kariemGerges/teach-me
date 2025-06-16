@@ -49,7 +49,7 @@ const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
                     ) {
                         router.replace('/screens/parentTeacherDashboard');
                     } else if (profile.type === 'kid') {
-                        router.replace('/(tabs)/explore');
+                        router.replace('/(tabs)');
                     } else {
                         // User data does not exist, navigate to profile creation
                         router.push('/');

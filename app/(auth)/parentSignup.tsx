@@ -189,12 +189,8 @@ const ParentSignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
                     },
                 },
                 provider: 'email',
-                progress: {
-                    math: { level: 0, stars: 0 },
-                    science: { level: 0, stars: 0 },
-                    english: { level: 0, stars: 0 },
-                },
-                rewards: [],
+                childrenIds: [], // Initialize with empty array as it is conditional
+                classroomIds: [], // Initialize with empty array as it is conditional
             };
 
             // 3. Validate with Zod schema (this is your structural validation)

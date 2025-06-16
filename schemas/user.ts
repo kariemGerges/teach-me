@@ -2,18 +2,24 @@ import { z } from 'zod';
 
 export const userProfileSchema = z.object({
     uid: z.string(),
-    type: z.enum(['parent', 'child', 'teacher']),
+    type: z.enum(['parent', 'teacher']),
     name: z.string(),
-    email: z.string().email().optional(),
-    grade: z.number().optional(),
+    email: z.string().email(),
+    provider: z.enum(['google', 'email', 'apple', 'facebook']),
     avatarUrl: z.string().url().optional(),
-    parentId: z.string().optional(),
     createdAt: z.number(),
     lastLogin: z.number().optional(),
-    displayName: z.string().optional(),
     onboardingComplete: z.boolean().optional(),
     profileCompleted: z.boolean().optional(),
     isActive: z.boolean().optional(),
+    displayName: z.string().optional(),
+
+    // Parent-specific
+    childrenIds: z.array(z.string()).optional(),
+
+    // Teacher-specific
+    classroomIds: z.array(z.string()).optional(),
+
     settings: z
         .object({
             language: z.string().optional(),
@@ -26,17 +32,6 @@ export const userProfileSchema = z.object({
                 .optional(),
         })
         .optional(),
-    progress: z
-        .object({
-            math: z.object({ level: z.number(), stars: z.number() }).optional(),
-            science: z
-                .object({ level: z.number(), stars: z.number() })
-                .optional(),
-            english: z
-                .object({ level: z.number(), stars: z.number() })
-                .optional(),
-        })
-        .optional(),
-    provider: z.enum(['google', 'email', 'apple', 'facebook']).optional(),
-    rewards: z.array(z.string()).optional(),
 });
+
+export type UserProfile = z.infer<typeof userProfileSchema>;

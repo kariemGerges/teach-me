@@ -288,18 +288,20 @@ export default function GoogleSignInButton() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const redirectUri = `https://auth.expo.io/@kariemgerges/teach-me`;
+
     // For native platforms, use expo-auth-session
     const [request, response, promptAsync] = Google.useAuthRequest({
-        expoClientId: EXPO_CLIENT_ID,
+        clientId: EXPO_CLIENT_ID,
         iosClientId: IOS_CLIENT_ID,
         androidClientId: ANDROID_CLIENT_ID,
         webClientId: WEB_CLIENT_ID,
+        redirectUri,
         scopes: ['openid', 'profile', 'email'],
         responseType: 'id_token',
         // ...(Platform.OS === 'android' && {
         //     redirectUri: `${Constants.linkingUri}/--/`,
         // }),
-    
     });
 
     // Function to create user profile in Firestore
@@ -327,12 +329,8 @@ export default function GoogleSignInButton() {
                 },
             },
             provider: 'google',
-            progress: {
-                math: { level: 0, stars: 0 },
-                science: { level: 0, stars: 0 },
-                english: { level: 0, stars: 0 },
-            },
-            rewards: [],
+            childrenIds: [],
+            classroomIds: [],
         };
 
         if (snap.exists()) {
@@ -483,21 +481,21 @@ export default function GoogleSignInButton() {
 
         (async () => {
             try {
-                const { id_token, access_token } = response.authentication!;
+                const { idToken, accessToken } = response.authentication!;
 
                 console.log('Processing authentication tokens:', {
-                    hasIdToken: !!id_token,
-                    hasAccessToken: !!access_token,
-                    idTokenLength: id_token?.length || 0,
+                    hasIdToken: !!idToken,
+                    hasAccessToken: !!accessToken,
+                    idTokenLength: idToken?.length || 0,
                 });
 
-                if (!id_token) {
+                if (!idToken) {
                     throw new Error('No ID token received from Google');
                 }
 
                 const credential = GoogleAuthProvider.credential(
-                    id_token,
-                    access_token
+                    idToken,
+                    accessToken
                 );
 
                 console.log('Attempting Firebase sign-in...');
