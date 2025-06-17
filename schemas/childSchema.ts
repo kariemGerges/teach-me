@@ -25,6 +25,7 @@ export const childSchema = z.object({
         .optional(),
 
     rewards: z.array(z.string()).optional(),
+    isActive: z.boolean().optional(),
 });
 
 

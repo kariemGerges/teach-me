@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Alert,
     Clipboard,
@@ -12,18 +12,30 @@ import {
     View,
 } from 'react-native';
 
+import {
+    addDoc,
+    arrayUnion,
+    collection,
+    doc,
+    onSnapshot,
+    orderBy,
+    query,
+    updateDoc,
+    where,
+    arrayRemove,
+    deleteDoc,
+} from 'firebase/firestore';
+
+import { firestoreDb } from '@/services/firebaseConfig';
+
+// router hooks
+import { useLocalSearchParams } from 'expo-router';
+
+// types and schemas
+import { Children } from '@/types/children';
+
+// components
 import SignOutButton from '@/components/ui/SignOutBtn';
-
-
-interface Kid {
-    id: string;
-    name: string;
-    joinCode: string;
-    isActive: boolean;
-    createdAt: Date;
-    grade: string;
-    avatar: string;
-}
 
 const AVATAR_OPTIONS = [
     '🧒',
@@ -52,25 +64,68 @@ const AVATAR_OPTIONS = [
     '🐨',
 ];
 
-const GRADE_OPTIONS = [
-    'Pre-K',
-    'Kindergarten',
-    '1st Grade',
-    '2nd Grade',
-    '3rd Grade',
-    '4th Grade',
-    '5th Grade',
-];
+// const GRADE_OPTIONS = [
+//     'Pre-K',
+//     'Kindergarten',
+//     '1st Grade',
+//     '2nd Grade',
+//     '3rd Grade',
+//     '4th Grade',
+//     '5th Grade',
+// ];
 
-interface ParentDashboardProps {}
 
-const ParentDashboard: React.FC<ParentDashboardProps> = () => {
+
+const ParentDashboard: React.FC = () => {
     const [kidName, setKidName] = useState<string>('');
-    const [selectedGrade, setSelectedGrade] = useState<string>('Kindergarten');
+    const [selectedGrade, setSelectedGrade] = useState<number>(0); // Changed to number
     const [selectedAvatar, setSelectedAvatar] = useState<string>('🧒');
-    const [kids, setKids] = useState<Kid[]>([]);
+    const [children, setChildren] = useState<Children[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
 
-    const generateJoinCode = (): string => {
+    // Get user from local search params
+    const { user: userString } = useLocalSearchParams();
+    // Parse the user string back into an object
+    const user =
+        userString && !Array.isArray(userString)
+            ? JSON.parse(userString)
+            : null;
+
+    // Real-time listener for children data
+    useEffect(() => {
+        if (!user?.uid) return;
+
+        const childrenQuery = query(
+            collection(firestoreDb, 'children'),
+            where('parentId', '==', user.uid),
+            orderBy('createdAt', 'desc')
+        );
+
+        const unsubscribe = onSnapshot(
+            childrenQuery,
+            (snapshot) => {
+                const childrenData: Children[] = [];
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    childrenData.push({
+                        uid: doc.id,
+                        ...data,
+                    } as Children);
+                });
+                setChildren(childrenData);
+                setLoading(false);
+            },
+            (error) => {
+                console.error('Error fetching children:', error);
+                Alert.alert('Error', 'Failed to load children data');
+                setLoading(false);
+            }
+        );
+
+        return () => unsubscribe();
+    }, [user?.uid]);
+
+    const generatePin = (): string => {
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let result = '';
         for (let i = 0; i < 6; i++) {
@@ -81,51 +136,107 @@ const ParentDashboard: React.FC<ParentDashboardProps> = () => {
         return result;
     };
 
-    const addKid = (): void => {
-        if (kidName.trim()) {
-            const newKid: Kid = {
-                id: Date.now().toString(),
+    const addChild = async (): Promise<void> => {
+        if (!kidName.trim()) {
+            Alert.alert(
+                'Please enter a name',
+                "Child's name is required to create their profile."
+            );
+            return;
+        }
+
+        if (!user?.uid) {
+            Alert.alert('Error', 'You must be logged in to add children');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const newChildData: Omit<Children, 'uid'> = {
+                type: 'child',
                 name: kidName.trim(),
-                joinCode: generateJoinCode(),
-                isActive: true,
-                createdAt: new Date(),
                 grade: selectedGrade,
-                avatar: selectedAvatar,
+                pin: generatePin(),
+                avatarUrl: selectedAvatar, // Using emoji as avatar for now
+                parentId: user.uid,
+                createdAt: Date.now(),
+                isActive: true,
+                progress: {
+                    math: { level: 1, stars: 0 },
+                    science: { level: 1, stars: 0 },
+                    english: { level: 1, stars: 0 },
+                },
+                rewards: [],
             };
 
-            setKids([...kids, newKid]);
+            // Add child to children collection
+            const childDocRef = await addDoc(
+                collection(firestoreDb, 'children'),
+                newChildData
+            );
+
+            // Update parent's childrenIds array
+            await updateDoc(doc(firestoreDb, 'users', user.uid), {
+                childrenIds: arrayUnion(childDocRef.id),
+            });
+
+            // Reset form
             setKidName('');
-            setSelectedGrade('Kindergarten');
+            setSelectedGrade(0);
             setSelectedAvatar('🧒');
 
             Alert.alert(
                 'Success! 🎉',
-                `Join code created for ${newKid.name}!\nGrade: ${newKid.grade}\nCode: ${newKid.joinCode}`,
+                `Profile created for ${
+                    newChildData.name
+                }!\nGrade: ${getGradeName(newChildData.grade)}\nPIN: ${
+                    newChildData.pin
+                }`,
                 [{ text: 'OK', style: 'default' }]
             );
-        } else {
+        } catch (error) {
+            console.error('Error adding child:', error);
             Alert.alert(
-                'Please enter a name',
-                "Kid's name is required to generate a join code."
+                'Error',
+                'Failed to create child profile. Please try again.'
             );
+        } finally {
+            setLoading(false);
         }
     };
 
+    // Helper function to get grade name from grade number
+    const getGradeName = (grade: number): string => {
+        const gradeNames = [
+            'Kindergarten',
+            '1st Grade',
+            '2nd Grade',
+            '3rd Grade',
+            '4th Grade',
+            '5th Grade',
+        ];
+        return gradeNames[grade] || `Grade ${grade}`;
+    };
+
+    // Function to copy join code to clipboard
     const copyToClipboard = async (
         code: string,
-        kidName: string
+        childName: string
     ): Promise<void> => {
         try {
             await Clipboard.setString(code);
             Alert.alert(
                 'Copied! 📋',
-                `${kidName}'s join code copied to clipboard`
+                `${childName}'s join code copied to clipboard`
             );
         } catch (error) {
             Alert.alert('Error', 'Failed to copy code to clipboard');
         }
     };
 
+    // Function to share join code via native share dialog
+    // Note: This will open the native share dialog on both iOS and Android
     const shareCode = async (code: string, kidName: string): Promise<void> => {
         try {
             await Share.share({
@@ -133,32 +244,57 @@ const ParentDashboard: React.FC<ParentDashboardProps> = () => {
                 title: 'Kid Join Code',
             });
         } catch (error) {
+            console.error('Error sharing code:', error);
             Alert.alert('Error', 'Failed to share code');
         }
     };
 
-    const toggleKidStatus = (kidId: string): void => {
-        setKids(
-            kids.map((kid) =>
-                kid.id === kidId ? { ...kid, isActive: !kid.isActive } : kid
-            )
-        );
+    // Function to toggle child status
+    const toggleKidStatus = async (childId: string): Promise<void> => {
+        try {
+            const child = children.find((c) => c.uid === childId);
+            if (!child) return;
+
+            await updateDoc(doc(firestoreDb, 'children', childId), {
+                isActive: !child.isActive,
+            });
+        } catch (error) {
+            console.error('Error toggling child status:', error);
+            Alert.alert('Error', 'Failed to update status');
+        }
     };
 
-    const deleteKid = (kidId: string, kidName: string): void => {
+    // Function to delete a child        // delete function to remove a kid's join code
+    const deleteKid = (childId: string, childName: string): void => {
         Alert.alert(
-            'Delete Join Code',
-            `Are you sure you want to delete ${kidName}'s join code?`,
+            'Delete Child Profile',
+            `Are you sure you want to delete ${childName}'s profile? This action cannot be undone.`,
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
                     text: 'Delete',
                     style: 'destructive',
-                    onPress: () =>
-                        setKids(kids.filter((kid) => kid.id !== kidId)),
+                    onPress: () => handleDeleteChild(childId),
                 },
             ]
         );
+    };
+
+    const handleDeleteChild = async (childId: string): Promise<void> => {
+        try {
+            // Remove child document
+            await deleteDoc(doc(firestoreDb, 'children', childId));
+
+            // Remove child ID from parent's childrenIds array
+            if (user?.uid) {
+                await updateDoc(doc(firestoreDb, 'users', user.uid), {
+                    childrenIds: arrayRemove(childId),
+                });
+            }
+        } catch (error) {
+            console.error('Error deleting child:', error);
+            Alert.alert('Error', 'Failed to delete child profile');
+        }
     };
 
     return (
@@ -174,6 +310,7 @@ const ParentDashboard: React.FC<ParentDashboardProps> = () => {
                         <SignOutButton />
                         <Text style={styles.subtitle}>
                             Generate join codes for your kids
+                            {JSON.stringify(user, null, 2)}
                         </Text>
                     </View>
 
@@ -201,26 +338,25 @@ const ParentDashboard: React.FC<ParentDashboardProps> = () => {
                                     showsHorizontalScrollIndicator={false}
                                     style={styles.gradeScroll}
                                 >
-                                    {GRADE_OPTIONS.map((grade) => (
+                                    {Array.from({ length: 13 }, (_, i) => (
                                         <TouchableOpacity
-                                            key={grade}
+                                            key={i}
                                             style={[
                                                 styles.gradeOption,
-                                                selectedGrade === grade &&
+                                                selectedGrade === i &&
                                                     styles.gradeOptionSelected,
                                             ]}
-                                            onPress={() =>
-                                                setSelectedGrade(grade)
-                                            }
+                                            onPress={() => setSelectedGrade(i)}
+                                            disabled={loading}
                                         >
                                             <Text
                                                 style={[
                                                     styles.gradeOptionText,
-                                                    selectedGrade === grade &&
+                                                    selectedGrade === i &&
                                                         styles.gradeOptionTextSelected,
                                                 ]}
                                             >
-                                                {grade}
+                                                {getGradeName(i)}
                                             </Text>
                                         </TouchableOpacity>
                                     ))}
@@ -256,45 +392,47 @@ const ParentDashboard: React.FC<ParentDashboardProps> = () => {
                             <TouchableOpacity
                                 style={[
                                     styles.addButton,
-                                    kidName.trim()
+                                    kidName.trim() && !loading
                                         ? styles.addButtonActive
                                         : styles.addButtonInactive,
                                 ]}
-                                onPress={addKid}
-                                disabled={!kidName.trim()}
+                                onPress={addChild}
+                                disabled={!kidName.trim() || loading}
                             >
                                 <Text style={styles.addButtonText}>
-                                    Generate Code 🎯
+                                    {loading
+                                        ? 'Creating...'
+                                        : 'Create Profile 👶'}
                                 </Text>
                             </TouchableOpacity>
                         </View>
                     </View>
 
-                    {/* Kids List */}
-                    {kids.length > 0 && (
+                    {/* Children List */}
+                    {children.length > 0 && (
                         <View style={styles.kidsSection}>
                             <Text style={styles.sectionTitle}>
-                                Active Join Codes ({kids.length})
+                                Children ({children.length})
                             </Text>
-                            {kids.map((kid) => (
+                            {children.map((child) => (
                                 <View
-                                    key={kid.id}
+                                    key={child.uid}
                                     style={[
                                         styles.kidCard,
-                                        !kid.isActive && styles.kidCardInactive,
+                                        !child.isActive &&
+                                            styles.kidCardInactive,
                                     ]}
-                                    
                                 >
                                     <View style={styles.kidHeader}>
                                         <Text style={styles.kidAvatar}>
-                                            {kid.avatar}
+                                            {child.avatarUrl || '🧒'}
                                         </Text>
                                         <View style={styles.kidMainInfo}>
                                             <Text style={styles.kidName}>
-                                                {kid.name}
+                                                {child.name}
                                             </Text>
                                             <Text style={styles.kidGrade}>
-                                                {kid.grade}
+                                                {getGradeName(child.grade)}
                                             </Text>
                                         </View>
                                     </View>
@@ -302,25 +440,62 @@ const ParentDashboard: React.FC<ParentDashboardProps> = () => {
                                     <View style={styles.kidInfo}>
                                         <View style={styles.codeContainer}>
                                             <Text style={styles.codeLabel}>
-                                                Join Code:
+                                                PIN:
                                             </Text>
                                             <Text style={styles.joinCode}>
-                                                {kid.joinCode}
+                                                {child.pin}
                                             </Text>
                                         </View>
                                         <Text style={styles.createdDate}>
                                             Created:{' '}
-                                            {kid.createdAt.toLocaleDateString()}
+                                            {new Date(
+                                                child.createdAt
+                                            ).toLocaleDateString()}
                                         </Text>
+
+                                        {/* Progress Display */}
+                                        <View style={styles.progressContainer}>
+                                            <Text style={styles.progressTitle}>
+                                                Progress:
+                                            </Text>
+                                            <Text style={styles.progressText}>
+                                                📚 Math: Level{' '}
+                                                {child.progress?.math?.level ||
+                                                    1}{' '}
+                                                (
+                                                {child.progress?.math?.stars ||
+                                                    0}{' '}
+                                                ⭐)
+                                            </Text>
+                                            <Text style={styles.progressText}>
+                                                🔬 Science: Level{' '}
+                                                {child.progress?.science
+                                                    ?.level || 1}{' '}
+                                                (
+                                                {child.progress?.science
+                                                    ?.stars || 0}{' '}
+                                                ⭐)
+                                            </Text>
+                                            <Text style={styles.progressText}>
+                                                📖 English: Level{' '}
+                                                {child.progress?.english
+                                                    ?.level || 1}{' '}
+                                                (
+                                                {child.progress?.english
+                                                    ?.stars || 0}{' '}
+                                                ⭐)
+                                            </Text>
+                                        </View>
+
                                         <Text
                                             style={[
                                                 styles.status,
-                                                kid.isActive
+                                                child.isActive
                                                     ? styles.statusActive
                                                     : styles.statusInactive,
                                             ]}
                                         >
-                                            {kid.isActive
+                                            {child.isActive
                                                 ? '🟢 Active'
                                                 : '🔴 Inactive'}
                                         </Text>
@@ -331,25 +506,22 @@ const ParentDashboard: React.FC<ParentDashboardProps> = () => {
                                             style={styles.actionButton}
                                             onPress={() =>
                                                 copyToClipboard(
-                                                    kid.joinCode,
-                                                    kid.name
+                                                    child.pin,
+                                                    child.name
                                                 )
                                             }
                                         >
                                             <Text
                                                 style={styles.actionButtonText}
                                             >
-                                                📋 Copy
+                                                📋 Copy PIN
                                             </Text>
                                         </TouchableOpacity>
 
                                         <TouchableOpacity
                                             style={styles.actionButton}
                                             onPress={() =>
-                                                shareCode(
-                                                    kid.joinCode,
-                                                    kid.name
-                                                )
+                                                shareCode(child.pin, child.name)
                                             }
                                         >
                                             <Text
@@ -365,13 +537,13 @@ const ParentDashboard: React.FC<ParentDashboardProps> = () => {
                                                 styles.toggleButton,
                                             ]}
                                             onPress={() =>
-                                                toggleKidStatus(kid.id)
+                                                toggleKidStatus(child.uid)
                                             }
                                         >
                                             <Text
                                                 style={styles.actionButtonText}
                                             >
-                                                {kid.isActive
+                                                {child.isActive
                                                     ? '⏸️ Pause'
                                                     : '▶️ Activate'}
                                             </Text>
@@ -383,7 +555,7 @@ const ParentDashboard: React.FC<ParentDashboardProps> = () => {
                                                 styles.deleteButton,
                                             ]}
                                             onPress={() =>
-                                                deleteKid(kid.id, kid.name)
+                                                deleteKid(child.uid, child.name)
                                             }
                                         >
                                             <Text
@@ -398,14 +570,24 @@ const ParentDashboard: React.FC<ParentDashboardProps> = () => {
                         </View>
                     )}
 
-                    {kids.length === 0 && (
+                    {children.length === 0 && !loading && (
                         <View style={styles.emptyState}>
                             <Text style={styles.emptyStateText}>👨‍👩‍👧‍👦</Text>
                             <Text style={styles.emptyStateTitle}>
-                                No join codes yet
+                                No children profiles yet
                             </Text>
                             <Text style={styles.emptyStateSubtitle}>
-                                Add your first kid to generate their join code!
+                                Add your first child to create their learning
+                                profile!
+                            </Text>
+                        </View>
+                    )}
+
+                    {loading && children.length === 0 && (
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyStateText}>⏳</Text>
+                            <Text style={styles.emptyStateTitle}>
+                                Loading...
                             </Text>
                         </View>
                     )}
@@ -671,6 +853,23 @@ const styles = StyleSheet.create({
         color: '#7D6608',
         textAlign: 'center',
         opacity: 0.7,
+    },
+    progressContainer: {
+        marginVertical: 8,
+        padding: 8,
+        backgroundColor: '#FCF3CF',
+        borderRadius: 8,
+    },
+    progressTitle: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginBottom: 4,
+        color: '#7D6608',
+    },
+    progressText: {
+        fontSize: 12,
+        color: '#7D6608',
+        marginBottom: 2,
     },
 });
 

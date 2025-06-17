@@ -15,5 +15,6 @@ export interface Children {
         science?: { level: number; stars: number };
         english?: { level: number; stars: number };
     };
+    isActive?: boolean; // if the child is active
     rewards?: string[];
 }

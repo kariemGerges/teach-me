@@ -47,7 +47,11 @@ const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
                         profile.type === 'parent' ||
                         profile.type === 'teacher'
                     ) {
-                        router.replace('/screens/parentTeacherDashboard');
+                        // Pass the user object as a query parameter to the next screen
+                        router.replace({
+                            pathname: '/screens/parentTeacherDashboard',
+                            params: { user: JSON.stringify(user) },
+                        });
                     } else if (profile.type === 'kid') {
                         router.replace('/(tabs)');
                     } else {
