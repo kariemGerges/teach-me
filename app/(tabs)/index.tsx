@@ -48,8 +48,9 @@ const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
                         profile.type === 'teacher'
                     ) {
                         // Pass the user object as a query parameter to the next screen
+                        // 
                         router.replace({
-                            pathname: '/screens/parentTeacherDashboard',
+                            pathname: '/screens/parentDashoard',
                             params: { user: JSON.stringify(user) },
                         });
                     } else if (profile.type === 'kid') {
@@ -83,7 +84,7 @@ const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
     const buttonScale = useRef(new Animated.Value(0.8)).current;
 
     useEffect(() => {
-        // Initial entrance animation
+        // Initial entrance ani
         Animated.parallel([
             Animated.timing(fadeAnim, {
                 toValue: 1,

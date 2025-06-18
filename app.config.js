@@ -30,6 +30,8 @@ export default {
         },
         ios: {
             supportsTablet: true,
+            bundleIdentifier: 'com.kariemgerges.teachme',
+            buildNumber: '1.0.0',
         },
         android: {
             adaptiveIcon: {

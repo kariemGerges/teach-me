@@ -1,231 +1,4 @@
-// // app/components/GoogleSignInButton.tsx
-// import { auth, firestoreDb } from '@/services/firebaseConfig';
-// import * as Google from 'expo-auth-session/providers/google';
-// import Constants from 'expo-constants';
-// import { useRouter } from 'expo-router';
-// import * as WebBrowser from 'expo-web-browser';
-// import {
-//     fetchSignInMethodsForEmail,
-//     GoogleAuthProvider,
-//     signInWithCredential,
-// } from 'firebase/auth';
-// import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-// import React, { useCallback, useEffect, useState } from 'react';
-// import {
-//     ActivityIndicator,
-//     StyleSheet,
-//     Text,
-//     TouchableOpacity,
-//     View,
-// } from 'react-native';
 
-// import { UserProfile } from '@/types/user';
-
-// WebBrowser.maybeCompleteAuthSession();
-
-// export default function GoogleSignInButton() {
-//     const EXPO_CLIENT_ID = Constants.expoConfig?.extra?.GOOGLE_EXPO_CLIENT_ID;
-//     const IOS_CLIENT_ID = Constants.expoConfig?.extra?.GOOGLE_IOS_CLIENT_ID;
-//     const ANDROID_CLIENT_ID =
-//         Constants.expoConfig?.extra?.GOOGLE_ANDROID_CLIENT_ID;
-//     const WEB_CLIENT_ID = Constants.expoConfig?.extra?.GOOGLE_WEB_CLIENT_ID;
-
-//     console.log('Google OAuth IDs:', {
-//         EXPO_CLIENT_ID,
-//         IOS_CLIENT_ID,
-//         ANDROID_CLIENT_ID,
-//         WEB_CLIENT_ID,
-//     });
-
-//     if (__DEV__) {
-//         const missing = [
-//             !EXPO_CLIENT_ID && 'GOOGLE_EXPO_CLIENT_ID',
-//             !IOS_CLIENT_ID && 'GOOGLE_IOS_CLIENT_ID',
-//             !ANDROID_CLIENT_ID && 'GOOGLE_ANDROID_CLIENT_ID',
-//             !WEB_CLIENT_ID && 'GOOGLE_WEB_CLIENT_ID',
-//         ].filter(Boolean);
-//         if (missing.length) {
-//             console.warn(`⚠️ Missing Google OAuth IDs: ${missing.join(', ')}`);
-//         }
-//     }
-
-//     const router = useRouter();
-//     const [loading, setLoading] = useState(false);
-//     const [error, setError] = useState<string | null>(null);
-
-//     const [request, response, promptAsync] = Google.useAuthRequest({
-//         expoClientId: EXPO_CLIENT_ID,
-//         iosClientId: IOS_CLIENT_ID,
-//         androidClientId: ANDROID_CLIENT_ID,
-//         webClientId: WEB_CLIENT_ID,
-//         scopes: ['openid', 'profile', 'email'],
-//         responseType: 'id_token',
-//     });
-
-//     // Ensure the request is ready before proceeding
-//     const handlePress = useCallback(async () => {
-//         if (!request) {
-//             setError('Google sign-in not ready.');
-//             return;
-//         }
-//         setError(null);
-//         setLoading(true);
-//         try {
-//             await promptAsync({ useProxy: true });
-//         } catch (e) {
-//             console.error('Prompt error:', e);
-//             setError('Failed to open Google sign-in.');
-//         } finally {
-//             setLoading(false);
-//         }
-//     }, [request, promptAsync]);
-
-//     // Handle the response from Google sign-in
-//     useEffect(() => {
-//         if (response?.type !== 'success' || !response.authentication) return;
-
-//         (async () => {
-//             setLoading(true);
-//             try {
-//                 const { id_token, access_token } = response.authentication!;
-
-//                 // Add validation to prevent Firebase argument error
-//                 if (!id_token) {
-//                     throw new Error('No ID token received from Google');
-//                 }
-
-//                 console.log('Auth tokens:', {
-//                     hasIdToken: !!id_token,
-//                     hasAccessToken: !!access_token,
-//                 });
-
-//                 const credential = GoogleAuthProvider.credential(
-//                     id_token,
-//                     access_token
-//                 );
-
-//                 // Attempt Firebase sign-in
-//                 const userCred = await signInWithCredential(auth, credential);
-//                 const { uid, displayName, email } = userCred.user;
-
-//                 const userRef = doc(firestoreDb, 'users', uid);
-//                 const snap = await getDoc(userRef);
-
-//                 // 2. prepare user data according to UserProfile interface (schema)
-//                 const profile: UserProfile = {
-//                     uid,
-//                     type: 'parent',
-//                     name: displayName ?? 'Unknown User',
-//                     email: email ?? '',
-//                     createdAt: Date.now(),
-//                     lastLogin: Date.now(),
-//                     onboardingComplete: false,
-//                     profileCompleted: false,
-//                     isActive: true,
-//                     settings: {
-//                         language: 'en',
-//                         darkMode: false,
-//                         accessibility: {
-//                             textToSpeech: false,
-//                             colorContrast: false,
-//                         },
-//                     },
-//                     provider: 'google',
-//                     progress: {
-//                         math: { level: 0, stars: 0 },
-//                         science: { level: 0, stars: 0 },
-//                         english: { level: 0, stars: 0 },
-//                     },
-//                     rewards: [],
-//                 };
-
-//                 if (snap.exists()) {
-//                     await setDoc(
-//                         userRef,
-//                         { lastLogin: serverTimestamp() },
-//                         { merge: true }
-//                     );
-//                 } else {
-//                     await setDoc(userRef, profile);
-//                 }
-
-//                 router.replace('/(tabs)');
-//             } catch (err: any) {
-//                 console.error('Sign-in error:', err);
-
-//                 // Handle known error: account exists with different provider
-//                 if (
-//                     err.code === 'auth/account-exists-with-different-credential'
-//                 ) {
-//                     const email = err.customData?.email;
-//                     if (email) {
-//                         const methods = await fetchSignInMethodsForEmail(
-//                             auth,
-//                             email
-//                         );
-//                         setError(
-//                             `Email already in use. Try signing in with: ${methods[0]}`
-//                         );
-//                         return;
-//                     }
-//                 }
-
-//                 setError('Sign-in failed: ' + (err.message || 'Unknown error'));
-//             } finally {
-//                 setLoading(false);
-//             }
-//         })();
-//     }, [response, router]);
-
-//     return (
-//         <View style={styles.container}>
-//             <TouchableOpacity
-//                 style={[
-//                     styles.button,
-//                     (loading || !request) && styles.buttonDisabled,
-//                 ]}
-//                 disabled={loading || !request}
-//                 onPress={handlePress}
-//             >
-//                 {loading ? (
-//                     <ActivityIndicator color="#fff" />
-//                 ) : (
-//                     <Text style={styles.buttonText}>Continue with Google</Text>
-//                 )}
-//             </TouchableOpacity>
-
-//             {error && <Text style={styles.errorText}>{error}</Text>}
-//         </View>
-//     );
-// }
-
-// const styles = StyleSheet.create({
-//     container: {
-//         alignItems: 'center',
-//         marginVertical: 16,
-//     },
-//     button: {
-//         flexDirection: 'row',
-//         alignItems: 'center',
-//         paddingVertical: 12,
-//         paddingHorizontal: 24,
-//         backgroundColor: '#4285F4',
-//         borderRadius: 4,
-//     },
-//     buttonDisabled: {
-//         opacity: 0.6,
-//     },
-//     buttonText: {
-//         color: '#fff',
-//         fontSize: 16,
-//         fontWeight: '600',
-//     },
-//     errorText: {
-//         color: 'red',
-//         marginTop: 8,
-//         textAlign: 'center',
-//     },
-// });
 // app/components/GoogleSignInButton.tsx
 import { auth, firestoreDb } from '@/services/firebaseConfig';
 import * as Google from 'expo-auth-session/providers/google';
@@ -252,10 +25,15 @@ import {
 
 import { UserProfile } from '@/types/user';
 
+import * as AuthSession from 'expo-auth-session';
+
 // Only complete auth session for non-web platforms
 if (Platform.OS !== 'web') {
     WebBrowser.maybeCompleteAuthSession();
 }
+
+const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
+console.log('Generated Redirect URI (Tunnel Mode):', redirectUri);
 
 export default function GoogleSignInButton() {
     const EXPO_CLIENT_ID = Constants.expoConfig?.extra?.GOOGLE_EXPO_CLIENT_ID;
@@ -288,7 +66,7 @@ export default function GoogleSignInButton() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const redirectUri = `https://auth.expo.io/@kariemgerges/teach-me`;
+    // const redirectUri = `https://auth.expo.io/@kariemgerges/teach-me`;
 
     // For native platforms, use expo-auth-session
     const [request, response, promptAsync] = Google.useAuthRequest({

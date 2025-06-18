@@ -309,8 +309,10 @@ const ParentDashboard: React.FC = () => {
                         <Text style={styles.title}>Parent Dashboard</Text>
                         <SignOutButton />
                         <Text style={styles.subtitle}>
+
                             Generate join codes for your kids
-                            {JSON.stringify(user, null, 2)}
+                        {/* testing */}
+                            {/* {JSON.stringify(user, null, 2)} */}
                         </Text>
                     </View>
 
