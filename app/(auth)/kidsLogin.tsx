@@ -11,6 +11,10 @@ import {
     Alert,
 } from 'react-native';
 
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { firestoreDb } from '@/services/firebaseConfig';
+
+
 interface KidLoginScreenProps {}
 
 const KidLoginScreen: React.FC<KidLoginScreenProps> = () => {
@@ -19,7 +23,36 @@ const KidLoginScreen: React.FC<KidLoginScreenProps> = () => {
     const handleLogin = (): void => {
         if (joinCode.trim()) {
             // Handle login logic here
-            Alert.alert('Success!', `Welcome! Your join code is: ${joinCode}`);
+            // Alert.alert('Success!', `Welcome! Your join code is: ${joinCode}`);
+            const childrenRef = collection(firestoreDb, 'children');
+            const q = query(
+                childrenRef,
+                where('pin', '==', joinCode.trim().toUpperCase())
+            );
+            const snapshot = getDocs(q);
+
+            snapshot
+                .then((querySnapshot) => {
+                    if (querySnapshot.empty) {
+                        Alert.alert(
+                            'Error',
+                            'Invalid join code. Please try again.'
+                        );
+                    } else {
+                        // Assuming the first document is the child record
+                        const childData = querySnapshot.docs[0].data();
+                        Alert.alert(
+                            'Success!',
+                            `Welcome, ${childData.name}!`
+                        );
+                        console.log('Child Data:', childData);
+                        // Navigate to the next screen or perform further actions
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error fetching child data:', error);
+                    Alert.alert('Error', 'Something went wrong. Please try again.');
+                });
         } else {
             Alert.alert('Oops!', 'Please enter your join code first!');
         }
