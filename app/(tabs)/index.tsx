@@ -62,7 +62,7 @@ const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
                 }
             } else {
                 // No user is signed in, navigate to login screen
-                router.push('/');
+                router.push('/screens/kidsLandingScreen');
             }
             setUserLoading(false);
         });
