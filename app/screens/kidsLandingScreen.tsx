@@ -1,11 +1,19 @@
-import React from 'react';
-import { View, Text, StyleSheet, Button } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
-
+import React from 'react';
+import { Button, StyleSheet, Text, View } from 'react-native';
+import { Children } from '@/types/children';
 
 const KidsLandingScreen: React.FC = () => {
     const router = useRouter();
+    const { childData } = useLocalSearchParams();
+
+    let child = {};
+    try {
+        child = childData ? JSON.parse(childData as string) : {};
+    } catch (e) {
+        child = {};
+    }
 
     const handleStart = () => {
         // Navigate to the next screen, e.g., a login or signup screen
@@ -14,8 +22,10 @@ const KidsLandingScreen: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Welcome to Kids App</Text>
-            <Text style={styles.subtitle}>A fun and safe place for kids to learn and play</Text>
+            <Text style={styles.title}>Welcome back {child.name || 'Kid'}</Text>
+            <Text style={styles.subtitle}>
+                A fun and safe place for kids to learn and play
+            </Text>
             <LottieView
                 source={require('@/assets/lottie/spaceKid.json')}
                 autoPlay
@@ -50,4 +60,3 @@ const styles = StyleSheet.create({
 });
 
 export default KidsLandingScreen;
-

@@ -24,6 +24,9 @@ export default {
             GOOGLE_EXPO_CLIENT_ID: process.env.GOOGLE_EXPO_CLIENT_ID,
             GOOGLE_ANDROID_CLIENT_ID: process.env.GOOGLE_EXPO_CLIENT_ID_ANDROID,
             GOOGLE_IOS_CLIENT_ID: process.env.GOOGLE_EXPO_CLIENT_ID_IOS,
+            eas: {
+                projectId: '212209f1-4cc3-45a7-a2b4-f0ebc8a5e177',
+            },
         },
         eas: {
             projectId: '212209f1-4cc3-45a7-a2b4-f0ebc8a5e177',

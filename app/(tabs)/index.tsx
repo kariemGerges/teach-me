@@ -54,7 +54,7 @@ const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
                             params: { user: JSON.stringify(user) },
                         });
                     } else if (profile.type === 'kid') {
-                        router.replace('/(tabs)');
+                        router.replace('/screens/kidsLandingScreen');
                     } else {
                         // User data does not exist, navigate to profile creation
                         router.push('/');
@@ -62,7 +62,7 @@ const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
                 }
             } else {
                 // No user is signed in, navigate to login screen
-                router.push('/screens/kidsLandingScreen');
+                router.push('/');
             }
             setUserLoading(false);
         });

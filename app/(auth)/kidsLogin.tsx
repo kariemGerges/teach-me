@@ -13,17 +13,17 @@ import {
 
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { firestoreDb } from '@/services/firebaseConfig';
+import { useRouter } from 'expo-router';
 
 
 interface KidLoginScreenProps {}
 
 const KidLoginScreen: React.FC<KidLoginScreenProps> = () => {
     const [joinCode, setJoinCode] = useState<string>('');
+    const router = useRouter();
 
     const handleLogin = (): void => {
         if (joinCode.trim()) {
-            // Handle login logic here
-            // Alert.alert('Success!', `Welcome! Your join code is: ${joinCode}`);
             const childrenRef = collection(firestoreDb, 'children');
             const q = query(
                 childrenRef,
@@ -45,8 +45,13 @@ const KidLoginScreen: React.FC<KidLoginScreenProps> = () => {
                             'Success!',
                             `Welcome, ${childData.name}!`
                         );
-                        console.log('Child Data:', childData);
-                        // Navigate to the next screen or perform further actions
+                        // Navigate to the kids Landing screen
+                        router.replace({
+                            pathname: '/screens/kidsLandingScreen',
+                            params: {
+                                childData: JSON.stringify(childData),
+                            },
+                        });
                     }
                 })
                 .catch((error) => {
