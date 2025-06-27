@@ -5,6 +5,7 @@ import {
     Animated,
     Dimensions,
     Easing,
+    Platform,
     StatusBar,
     StyleSheet,
     Text,
@@ -418,8 +419,8 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingHorizontal: 24,
-        paddingTop: 40,
-        paddingBottom: 30,
+        paddingTop: Platform.OS === 'ios' ? 60 : 40,
+        paddingBottom: Platform.OS === 'ios' ? 90 : 30,
         justifyContent: 'space-between',
     },
     header: {
@@ -450,7 +451,7 @@ const styles = StyleSheet.create({
         width: 160,
         height: 160,
         position: 'absolute',
-        bottom: 70,
+        bottom: Platform.OS === 'ios' ? 130 : 70,
         right: 50,
         transform: [{ rotate: '55deg' }],
     },

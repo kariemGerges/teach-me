@@ -17,4 +17,5 @@ export interface Children {
     };
     isActive?: boolean; // if the child is active
     rewards?: string[];
+    currentTheme?: string; // current theme applied
 }
