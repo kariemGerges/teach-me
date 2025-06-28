@@ -26,11 +26,11 @@ export default function SettingsScreen() {
     const childData: Children = params.childData
         ? JSON.parse(params.childData as string)
         : {
-              name: 'Alex',
-              grade: '3rd Grade',
-              rewards: 125,
-              currentTheme: 'space',
-          };
+            name: 'Alex',
+            grade: '3rd Grade',
+            rewards: 125,
+            currentTheme: 'space',
+        };
 
     const [selectedTheme, setSelectedTheme] = useState(
         childData.currentTheme || 'space'
