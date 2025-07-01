@@ -11,16 +11,11 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
+import { SubjectSelectionProps, Subject, Grade } from '@/types/types';
 
 const { width } = Dimensions.get('window');
 
-interface SubjectSelectionProps {
-    onSubjectGradeSelect?: (subject: string, grade: string) => void;
-}
 
-type Subject = 'Math' | 'Science' | 'English';
-type Grade = 'K' | '1' | '2' | '3' | '4' | '5';
 
 const SubjectSelectionScreen: React.FC<SubjectSelectionProps> = ({
     onSubjectGradeSelect,
@@ -38,26 +33,33 @@ const SubjectSelectionScreen: React.FC<SubjectSelectionProps> = ({
         bgColor: string;
     }[] = [
         {
-            name: 'Math',
+            name: 'math',
             icon: '🔢',
             color: '#1E3A8A', // Dark blue
             bgColor: '#FEF3C7', // Light yellow
         },
         {
-            name: 'Science',
+            name: 'science',
             icon: '🧪',
             color: '#1E3A8A',
             bgColor: '#DBEAFE', // Light blue
         },
         {
-            name: 'English',
+            name: 'english',
             icon: '📚',
             color: '#1E3A8A',
             bgColor: '#FCD34D', // Yellow
         },
     ];
 
-    const grades: Grade[] = ['K', '1', '2', '3', '4', '5'];
+    const grades: Grade[] = [
+        'kindergarten',
+        'grade_1',
+        'grade_2',
+        'grade_3',
+        'grade_4',
+        'grade_5',
+    ];
 
     const handleSubjectPress = (subject: Subject) => {
         // Animate button press
@@ -145,9 +147,9 @@ const SubjectSelectionScreen: React.FC<SubjectSelectionProps> = ({
                                         styles.selectedGradeText,
                                 ]}
                             >
-                                {grade === 'K'
+                                {grade === 'kindergarten'
                                     ? 'Kindergarten'
-                                    : `Grade ${grade}`}
+                                    : `Grade ${grade.replace('grade_', '')}`}
                             </Text>
                         </TouchableOpacity>
                     ))}
@@ -158,51 +160,51 @@ const SubjectSelectionScreen: React.FC<SubjectSelectionProps> = ({
 
     return (
         // <LinearGradient colors={['#d6d69d', '#fefebe']}>
-            <SafeAreaView style={styles.container}>
-                <ScrollView
-                    contentContainerStyle={styles.scrollContainer}
-                    showsVerticalScrollIndicator={false}
-                >
-                    {/* Header */}
-                    <View style={styles.header}>
-                        <Text style={styles.welcomeText}>
-                            What do you want to learn today? 🌟
-                        </Text>
-                        <Text style={styles.subtitleText}>
-                            Pick your favorite subject!
-                        </Text>
-                    </View>
+        <SafeAreaView style={styles.container}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContainer}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Header */}
+                <View style={styles.header}>
+                    <Text style={styles.welcomeText}>
+                        What do you want to learn today? 🌟
+                    </Text>
+                    <Text style={styles.subtitleText}>
+                        Pick your favorite subject!
+                    </Text>
+                </View>
 
-                    {/* Subject Cards */}
-                    <View style={styles.subjectsContainer}>
-                        {subjects.map(renderSubjectCard)}
-                    </View>
+                {/* Subject Cards */}
+                <View style={styles.subjectsContainer}>
+                    {subjects.map(renderSubjectCard)}
+                </View>
 
-                    {/* Grade Selector */}
-                    {renderGradeSelector()}
+                {/* Grade Selector */}
+                {renderGradeSelector()}
 
-                    {/* Start Learning Button */}
-                    {selectedSubject && selectedGrade && (
-                        <TouchableOpacity
-                            style={styles.startButton}
+                {/* Start Learning Button */}
+                {selectedSubject && selectedGrade && (
+                    <TouchableOpacity
+                        style={styles.startButton}
                         activeOpacity={0.8}
-                            onPress={() => {
-                                router.push({
-                                    pathname: '/screens/modulesScreen',
-                                    params: {
-                                        subject: selectedSubject,
-                                        grade: selectedGrade,
-                                    },
-                                });
-                            }}
-                        >
-                            <Text style={styles.startButtonText}>
-                                Lets Learn {selectedSubject}! 🚀
-                            </Text>
-                        </TouchableOpacity>
-                    )}
-                </ScrollView>
-            </SafeAreaView>
+                        onPress={() => {
+                            router.push({
+                                pathname: '/screens/modulesScreen',
+                                params: {
+                                    subject: selectedSubject,
+                                    grade: selectedGrade,
+                                },
+                            });
+                        }}
+                    >
+                        <Text style={styles.startButtonText}>
+                            Lets Learn {selectedSubject}! 🚀
+                        </Text>
+                    </TouchableOpacity>
+                )}
+            </ScrollView>
+        </SafeAreaView>
         // </LinearGradient>
     );
 };

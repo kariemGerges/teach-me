@@ -64,18 +64,6 @@ const AVATAR_OPTIONS = [
     '🐨',
 ];
 
-// const GRADE_OPTIONS = [
-//     'Pre-K',
-//     'Kindergarten',
-//     '1st Grade',
-//     '2nd Grade',
-//     '3rd Grade',
-//     '4th Grade',
-//     '5th Grade',
-// ];
-
-
-
 const ParentDashboard: React.FC = () => {
     const [kidName, setKidName] = useState<string>('');
     const [selectedGrade, setSelectedGrade] = useState<number>(0); // Changed to number
@@ -231,6 +219,7 @@ const ParentDashboard: React.FC = () => {
                 `${childName}'s join code copied to clipboard`
             );
         } catch (error) {
+            console.error('Error copying code:', error);
             Alert.alert('Error', 'Failed to copy code to clipboard');
         }
     };

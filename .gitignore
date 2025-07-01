@@ -66,3 +66,6 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+
+serviceAccountKey.json
+/scripts

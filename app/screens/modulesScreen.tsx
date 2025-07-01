@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -8,249 +8,116 @@ import {
     ScrollView,
     Animated,
     Platform,
+    ActivityIndicator,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { collection, doc, getDocs } from 'firebase/firestore';
+import { firestoreDb } from '@/services/firebaseConfig';
+import { Module, Lesson, LessonStatus, LearningProgressProps } from '@/types/types';
 
-
-
-
-interface LearningProgressProps {
-//     subject: string;
-//     grade: string;
-//     onLessonSelect?: (moduleId: string, lessonId: string) => void;
-}
-
-type LessonStatus = 'completed' | 'in_progress' | 'locked';
-
-interface Lesson {
-    id: string;
-    title: string;
-    status: LessonStatus;
-    progress: number; // 0-100
-}
-
-interface Module {
-    id: string;
-    title: string;
-    icon: string;
-    lessons: Lesson[];
-    completedLessons: number;
-    totalLessons: number;
-}
 
 const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
     const [expandedModule, setExpandedModule] = useState<string | null>(null);
-    const [animatedValues] = useState(new Map());
+    const [animatedValues] = useState(new Map<string, Animated.Value>());
+    const [modules, setModules] = useState<Module[]>([]);
+    const [loading, setLoading] = useState(true);
     const { subject, grade } = useLocalSearchParams();
 
-    // Sample data - you would fetch this from your API
-    const getModulesForSubject = (subject: string): Module[] => {
-        const mathModules: Module[] = [
-            {
-                id: 'addition',
-                title: 'Addition & Subtraction',
-                icon: '➕',
-                lessons: [
-                    {
-                        id: 'lesson1',
-                        title: 'Basic Addition',
-                        status: 'completed',
-                        progress: 100,
-                    },
-                    {
-                        id: 'lesson2',
-                        title: 'Adding with Pictures',
-                        status: 'completed',
-                        progress: 100,
-                    },
-                    {
-                        id: 'lesson3',
-                        title: 'Two-Digit Addition',
-                        status: 'in_progress',
-                        progress: 65,
-                    },
-                    {
-                        id: 'lesson4',
-                        title: 'Word Problems',
-                        status: 'locked',
-                        progress: 0,
-                    },
-                ],
-                completedLessons: 2,
-                totalLessons: 4,
-            },
-            {
-                id: 'multiplication',
-                title: 'Multiplication',
-                icon: '✖️',
-                lessons: [
-                    {
-                        id: 'lesson1',
-                        title: 'Times Tables 1-5',
-                        status: 'locked',
-                        progress: 0,
-                    },
-                    {
-                        id: 'lesson2',
-                        title: 'Times Tables 6-10',
-                        status: 'locked',
-                        progress: 0,
-                    },
-                    {
-                        id: 'lesson3',
-                        title: 'Multiplication Games',
-                        status: 'locked',
-                        progress: 0,
-                    },
-                ],
-                completedLessons: 0,
-                totalLessons: 3,
-            },
-            {
-                id: 'geometry',
-                title: 'Shapes & Geometry',
-                icon: '🔺',
-                lessons: [
-                    {
-                        id: 'lesson1',
-                        title: 'Basic Shapes',
-                        status: 'locked',
-                        progress: 0,
-                    },
-                    {
-                        id: 'lesson2',
-                        title: 'Shape Patterns',
-                        status: 'locked',
-                        progress: 0,
-                    },
-                ],
-                completedLessons: 0,
-                totalLessons: 2,
-            },
-        ];
+    // Normalize params to handle array case
+    const normalizedSubject = Array.isArray(subject) ? subject[0] : subject;
+    const normalizedGrade = Array.isArray(grade) ? grade[0] : grade;
 
-        const scienceModules: Module[] = [
-            {
-                id: 'plants',
-                title: 'Plants & Animals',
-                icon: '🌱',
-                lessons: [
-                    {
-                        id: 'lesson1',
-                        title: 'Parts of a Plant',
-                        status: 'completed',
-                        progress: 100,
-                    },
-                    {
-                        id: 'lesson2',
-                        title: 'Animal Habitats',
-                        status: 'in_progress',
-                        progress: 45,
-                    },
-                    {
-                        id: 'lesson3',
-                        title: 'Life Cycles',
-                        status: 'locked',
-                        progress: 0,
-                    },
-                ],
-                completedLessons: 1,
-                totalLessons: 3,
-            },
-            {
-                id: 'weather',
-                title: 'Weather & Seasons',
-                icon: '☀️',
-                lessons: [
-                    {
-                        id: 'lesson1',
-                        title: 'Types of Weather',
-                        status: 'locked',
-                        progress: 0,
-                    },
-                    {
-                        id: 'lesson2',
-                        title: 'Four Seasons',
-                        status: 'locked',
-                        progress: 0,
-                    },
-                ],
-                completedLessons: 0,
-                totalLessons: 2,
-            },
-        ];
+    const getModulesForSubject = async (subject: string, grade: string): Promise<Module[]> => {
+        try {
+            const subjectRef = doc(
+                firestoreDb,
+                'grades',
+                grade,
+                'subjects',
+                subject
+            );
+            const modulesRef = collection(subjectRef, 'modules');
+            const modulesSnap = await getDocs(modulesRef);
 
-        const englishModules: Module[] = [
-            {
-                id: 'phonics',
-                title: 'Phonics & Reading',
-                icon: '🔤',
-                lessons: [
-                    {
-                        id: 'lesson1',
-                        title: 'Letter Sounds A-M',
-                        status: 'completed',
-                        progress: 100,
-                    },
-                    {
-                        id: 'lesson2',
-                        title: 'Letter Sounds N-Z',
-                        status: 'completed',
-                        progress: 100,
-                    },
-                    {
-                        id: 'lesson3',
-                        title: 'Blending Sounds',
-                        status: 'in_progress',
-                        progress: 80,
-                    },
-                    {
-                        id: 'lesson4',
-                        title: 'Simple Words',
-                        status: 'locked',
-                        progress: 0,
-                    },
-                ],
-                completedLessons: 2,
-                totalLessons: 4,
-            },
-            {
-                id: 'writing',
-                title: 'Writing & Spelling',
-                icon: '✏️',
-                lessons: [
-                    {
-                        id: 'lesson1',
-                        title: 'Letter Formation',
-                        status: 'locked',
-                        progress: 0,
-                    },
-                    {
-                        id: 'lesson2',
-                        title: 'Simple Sentences',
-                        status: 'locked',
-                        progress: 0,
-                    },
-                ],
-                completedLessons: 0,
-                totalLessons: 2,
-            },
-        ];
 
-        switch (subject.toLowerCase()) {
-            case 'math':
-                return mathModules;
-            case 'science':
-                return scienceModules;
-            case 'english':
-                return englishModules;
-            default:
-                return mathModules;
+            const modulesWithLessons = await Promise.all(
+                modulesSnap.docs.map(async (modDoc) => {
+                    const modData = modDoc.data();
+                    const lessonsRef = collection(modDoc.ref, 'lessons');
+                    const lessonsSnap = await getDocs(lessonsRef);
+                    
+                    const lessons: Lesson[] = lessonsSnap.docs.map((doc) => {
+                        const lessonData = doc.data();
+                        return {
+                            id: doc.id,
+                            title: lessonData.title ?? '',
+                            status: lessonData.status ?? 'locked',
+                            progress: lessonData.progress ?? 0,
+                            singleLesson: lessonData
+
+                        };
+                    });
+
+                    const completedLessons = lessons.filter(
+                        (lesson) => lesson.status === 'completed'
+                    ).length;
+                    const totalLessons = lessons.length;
+
+                    return {
+                        id: modDoc.id,
+                        title: modData.title ?? '',
+                        icon: modData.icon ?? '',
+                        lessons,
+                        completedLessons,
+                        totalLessons,
+                    };
+                })
+            );
+            console.log(
+                'Modules and lessons fetched successfully:',
+                modulesWithLessons
+            );
+            return modulesWithLessons;
+            
+        } catch (error) {
+            console.error('Error fetching modules and lessons:', error);
+            return [];
         }
     };
 
-    const normalizedSubject = Array.isArray(subject) ? subject[0] : subject;
-    const modules = getModulesForSubject(normalizedSubject);
+    useEffect(() => {
+        let isMounted = true;
+        
+        const fetchData = async () => {
+            if (!normalizedSubject || !normalizedGrade) {
+                setLoading(false);
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const result = await getModulesForSubject(normalizedSubject, normalizedGrade);
+                if (isMounted) {
+                    setModules(result);
+                }
+            } catch (error) {
+                console.error('Error in fetchData:', error);
+                if (isMounted) {
+                    setModules([]);
+                }
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        fetchData();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [normalizedSubject, normalizedGrade]);
 
     // Calculate overall progress
     const totalLessons = modules.reduce(
@@ -261,9 +128,9 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
         (sum, module) => sum + module.completedLessons,
         0
     );
-    const overallProgress = Math.round((completedLessons / totalLessons) * 100);
+    const overallProgress = totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100);
 
-    // toggle module expansion
+    // Toggle module expansion
     const toggleModule = (moduleId: string) => {
         if (!animatedValues.has(moduleId)) {
             animatedValues.set(moduleId, new Animated.Value(0));
@@ -279,7 +146,7 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
         }).start();
     };
 
-    // lesson status icons and colors
+    // Lesson status icons and colors
     const getLessonStatusIcon = (status: LessonStatus) => {
         switch (status) {
             case 'completed':
@@ -291,24 +158,23 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
         }
     };
 
-
-    const getLessonStatusColor = (status: LessonStatus) => {
-        switch (status) {
-            case 'completed':
-                return '#10B981';
-            case 'in_progress':
-                return '#F59E0B';
-            case 'locked':
-                return '#9CA3AF';
+    // Normalize subject and grade for display
+    const normalizeSubject = (subject: string) => {
+        return subject.charAt(0).toUpperCase() + subject.slice(1).toLowerCase();
+    };
+    const normalizeGrade = (grade: string) => {
+        if (grade === 'kindergarten' || grade === 'K') {
+            return 'Kindergarten';
         }
+        return `Grade ${grade.replace('grade_', '')}`;
     };
 
     // Render progress header
-    // This shows the overall progress, completed lessons, and remaining lessons
     const renderProgressHeader = () => (
         <View style={styles.progressHeader}>
             <Text style={styles.subjectTitle}>
-                {subject} - Grade {grade} 🎯
+                {normalizeSubject(normalizedSubject)} -{' '}
+                {normalizeGrade(normalizedGrade)} 🎯
             </Text>
 
             <View style={styles.progressCard}>
@@ -365,6 +231,14 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
                 // if (lesson.status !== 'locked') {
                 //     navigation.navigate('LessonDetail', { moduleId, lessonId: lesson.id });
                 // }
+                router.push({ pathname: '/screens/singleLessonScreen', 
+                    params: {
+                        lessonId: lesson.id,
+                        subjectName: normalizedSubject,
+                        topicName: normalizedGrade,
+                        
+                        
+                    } });
             }}
             disabled={lesson.status === 'locked'}
             activeOpacity={0.7}
@@ -402,12 +276,11 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
 
     const renderModule = (module: Module) => {
         const isExpanded = expandedModule === module.id;
-        const animatedValue =
-            animatedValues.get(module.id) || new Animated.Value(0);
+        const animatedValue = animatedValues.get(module.id) || new Animated.Value(0);
 
-        const moduleProgress = Math.round(
-            (module.completedLessons / module.totalLessons) * 100
-        );
+        const moduleProgress = module.totalLessons === 0 
+            ? 0 
+            : Math.round((module.completedLessons / module.totalLessons) * 100);
 
         return (
             <View key={module.id} style={styles.moduleContainer}>
@@ -473,6 +346,29 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
         );
     };
 
+    // Loading state
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#1E3A8A" />
+                    <Text style={styles.loadingText}>Loading modules...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    // No data state
+    if (!normalizedSubject || !normalizedGrade) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>Subject and grade parameters are required</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView
@@ -483,7 +379,15 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
 
                 <View style={styles.modulesSection}>
                     <Text style={styles.sectionTitle}>Learning Modules 📚</Text>
-                    {modules.map(renderModule)}
+                    {modules.length === 0 ? (
+                        <View style={styles.noDataContainer}>
+                            <Text style={styles.noDataText}>
+                                No modules found for {normalizedSubject} - Grade {normalizedGrade}
+                            </Text>
+                        </View>
+                    ) : (
+                        modules.map(renderModule)
+                    )}
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -499,6 +403,36 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         paddingHorizontal: Platform.OS === 'ios' ? 20 : 16,
         paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+        color: '#64748B',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+    },
+    errorText: {
+        fontSize: 16,
+        color: '#EF4444',
+        textAlign: 'center',
+    },
+    noDataContainer: {
+        padding: 20,
+        alignItems: 'center',
+    },
+    noDataText: {
+        fontSize: 16,
+        color: '#64748B',
+        textAlign: 'center',
     },
     progressHeader: {
         marginTop: Platform.OS === 'ios' ? 20 : 16,

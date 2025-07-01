@@ -21,7 +21,8 @@ const THEMES = [
     { id: 'soccer', name: 'Soccer', icon: 'football-outline', emoji: '⚽' },
 ];
 
-export default function SettingsScreen() {
+// export default function SettingsScreen() {
+const SettingsScreen: React.FC = () => {
     const params = useLocalSearchParams();
     const childData: Children = params.childData
         ? JSON.parse(params.childData as string)
@@ -484,3 +485,5 @@ const styles = StyleSheet.create({
         
     },
 });
+
+export default SettingsScreen;
