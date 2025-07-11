@@ -1,8 +1,10 @@
+import { Grade, Subject, SubjectSelectionProps } from '@/types/types';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
     Animated,
     Dimensions,
+    ImageBackground,
     Platform,
     SafeAreaView,
     ScrollView,
@@ -11,11 +13,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { SubjectSelectionProps, Subject, Grade } from '@/types/types';
 
 const { width } = Dimensions.get('window');
-
-
 
 const SubjectSelectionScreen: React.FC<SubjectSelectionProps> = ({
     onSubjectGradeSelect,
@@ -159,60 +158,67 @@ const SubjectSelectionScreen: React.FC<SubjectSelectionProps> = ({
     };
 
     return (
-        // <LinearGradient colors={['#d6d69d', '#fefebe']}>
-        <SafeAreaView style={styles.container}>
-            <ScrollView
-                contentContainerStyle={styles.scrollContainer}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* Header */}
-                <View style={styles.header}>
-                    <Text style={styles.welcomeText}>
-                        What do you want to learn today? 🌟
-                    </Text>
-                    <Text style={styles.subtitleText}>
-                        Pick your favorite subject!
-                    </Text>
-                </View>
-
-                {/* Subject Cards */}
-                <View style={styles.subjectsContainer}>
-                    {subjects.map(renderSubjectCard)}
-                </View>
-
-                {/* Grade Selector */}
-                {renderGradeSelector()}
-
-                {/* Start Learning Button */}
-                {selectedSubject && selectedGrade && (
-                    <TouchableOpacity
-                        style={styles.startButton}
-                        activeOpacity={0.8}
-                        onPress={() => {
-                            router.push({
-                                pathname: '/screens/modulesScreen',
-                                params: {
-                                    subject: selectedSubject,
-                                    grade: selectedGrade,
-                                },
-                            });
-                        }}
-                    >
-                        <Text style={styles.startButtonText}>
-                            Lets Learn {selectedSubject}! 🚀
+        <ImageBackground
+            source={require('@/assets/images/bg.png')}
+            style={styles.gradientBackground}
+            resizeMode="cover"
+        >
+            <SafeAreaView style={styles.container}>
+                <ScrollView
+                    contentContainerStyle={styles.scrollContainer}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* Header */}
+                    <View style={styles.header}>
+                        <Text style={styles.welcomeText}>
+                            What do you want to learn today? 🌟
                         </Text>
-                    </TouchableOpacity>
-                )}
-            </ScrollView>
-        </SafeAreaView>
-        // </LinearGradient>
+                        <Text style={styles.subtitleText}>
+                            Pick your favorite subject!
+                        </Text>
+                    </View>
+
+                    {/* Subject Cards */}
+                    <View style={styles.subjectsContainer}>
+                        {subjects.map(renderSubjectCard)}
+                    </View>
+
+                    {/* Grade Selector */}
+                    {renderGradeSelector()}
+
+                    {/* Start Learning Button */}
+                    {selectedSubject && selectedGrade && (
+                        <TouchableOpacity
+                            style={styles.startButton}
+                            activeOpacity={0.8}
+                            onPress={() => {
+                                router.push({
+                                    pathname: '/screens/modulesScreen',
+                                    params: {
+                                        subject: selectedSubject,
+                                        grade: selectedGrade,
+                                    },
+                                });
+                            }}
+                        >
+                            <Text style={styles.startButtonText}>
+                                Lets Learn {selectedSubject}! 🚀
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                </ScrollView>
+            </SafeAreaView>
+        </ImageBackground>
     );
 };
 
 const styles = StyleSheet.create({
+    gradientBackground: {
+        flex: 1,
+    },
     container: {
         flex: 1,
-        backgroundColor: '#FEFEBE', // Light yellow background
+        // backgroundColor: '#FEFEBE', // Light yellow background
     },
     scrollContainer: {
         flexGrow: 1,
@@ -221,19 +227,19 @@ const styles = StyleSheet.create({
     },
     header: {
         alignItems: 'center',
-        marginTop: Platform.OS === 'ios' ? 20 : 16,
+        marginTop: Platform.OS === 'ios' ? 20 : 60,
         marginBottom: Platform.OS === 'ios' ? 30 : 24,
     },
     welcomeText: {
         fontSize: Platform.OS === 'ios' ? 28 : 26,
         fontWeight: 'bold',
-        color: '#1E3A8A',
+        color: '#ffffff',
         textAlign: 'center',
         marginBottom: Platform.OS === 'ios' ? 8 : 6,
     },
     subtitleText: {
         fontSize: Platform.OS === 'ios' ? 18 : 16,
-        color: '#64748B',
+        color: '#ffffff',
         textAlign: 'center',
     },
     subjectsContainer: {

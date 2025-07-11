@@ -59,7 +59,7 @@ export interface Activity {
     type: string;
     question?: string;
     pairs?: Array<{ fraction: string; equivalent: string }>;
-    problems?: Array<{ fraction: string; equivalent: string; answer: string }>;
+    problems?: { fraction: string; equivalent: string; answer: string }[];
     challenges?: Array<{ clue: string; answer: string }>;
     datasets?: any[];
     experiments?: string[];
@@ -107,3 +107,65 @@ export interface LessonScreenProps {
     };
     navigation: any;
 }
+
+
+
+// types/lesson.ts
+export interface BaseLesson {
+    id: string;
+    title: string;
+    subject: string;
+    module: string;
+    type: string;
+    content: any; // This will hold the dynamic content
+  }
+  
+  export interface MathLesson extends BaseLesson {
+    type: 'math';
+    content: {
+      equation?: string;
+      steps?: string[];
+      examples?: {
+        problem: string;
+        solution: string;
+      }[];
+      practice?: {
+        question: string;
+        answer: string;
+      }[];
+    };
+  }
+  
+  export interface ScienceLesson extends BaseLesson {
+    type: 'science';
+    content: {
+      theory?: string;
+      diagrams?: string[];
+      experiments?: {
+        title: string;
+        materials: string[];
+        procedure: string[];
+        observation: string;
+      }[];
+      facts?: string[];
+    };
+  }
+  
+  export interface EnglishLesson extends BaseLesson {
+    type: 'english';
+    content: {
+      passage?: string;
+      vocabulary?: { word: string; meaning: string; }[];
+      grammar?: {
+        rule: string;
+        examples: string[];
+      };
+      exercises?: {
+        question: string;
+        options?: string[];
+        answer: string;
+      }[];
+    };
+  }
+  
+  export type Lesson3 = MathLesson | ScienceLesson | EnglishLesson;

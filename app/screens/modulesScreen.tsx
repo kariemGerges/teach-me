@@ -1,20 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import { firestoreDb } from '@/services/firebaseConfig';
 import {
-    View,
-    Text,
-    TouchableOpacity,
-    StyleSheet,
-    SafeAreaView,
-    ScrollView,
-    Animated,
-    Platform,
-    ActivityIndicator,
-} from 'react-native';
+    LearningProgressProps,
+    Lesson,
+    LessonStatus,
+    Module,
+} from '@/types/types';
 import { router, useLocalSearchParams } from 'expo-router';
 import { collection, doc, getDocs } from 'firebase/firestore';
-import { firestoreDb } from '@/services/firebaseConfig';
-import { Module, Lesson, LessonStatus, LearningProgressProps } from '@/types/types';
-
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Animated,
+    ImageBackground,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
     const [expandedModule, setExpandedModule] = useState<string | null>(null);
@@ -27,7 +32,10 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
     const normalizedSubject = Array.isArray(subject) ? subject[0] : subject;
     const normalizedGrade = Array.isArray(grade) ? grade[0] : grade;
 
-    const getModulesForSubject = async (subject: string, grade: string): Promise<Module[]> => {
+    const getModulesForSubject = async (
+        subject: string,
+        grade: string
+    ): Promise<Module[]> => {
         try {
             const subjectRef = doc(
                 firestoreDb,
@@ -39,13 +47,12 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
             const modulesRef = collection(subjectRef, 'modules');
             const modulesSnap = await getDocs(modulesRef);
 
-
             const modulesWithLessons = await Promise.all(
                 modulesSnap.docs.map(async (modDoc) => {
                     const modData = modDoc.data();
                     const lessonsRef = collection(modDoc.ref, 'lessons');
                     const lessonsSnap = await getDocs(lessonsRef);
-                    
+
                     const lessons: Lesson[] = lessonsSnap.docs.map((doc) => {
                         const lessonData = doc.data();
                         return {
@@ -53,8 +60,7 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
                             title: lessonData.title ?? '',
                             status: lessonData.status ?? 'locked',
                             progress: lessonData.progress ?? 0,
-                            singleLesson: lessonData
-
+                            singleLesson: lessonData,
                         };
                     });
 
@@ -78,7 +84,6 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
                 modulesWithLessons
             );
             return modulesWithLessons;
-            
         } catch (error) {
             console.error('Error fetching modules and lessons:', error);
             return [];
@@ -87,7 +92,7 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
 
     useEffect(() => {
         let isMounted = true;
-        
+
         const fetchData = async () => {
             if (!normalizedSubject || !normalizedGrade) {
                 setLoading(false);
@@ -96,7 +101,10 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
 
             setLoading(true);
             try {
-                const result = await getModulesForSubject(normalizedSubject, normalizedGrade);
+                const result = await getModulesForSubject(
+                    normalizedSubject,
+                    normalizedGrade
+                );
                 if (isMounted) {
                     setModules(result);
                 }
@@ -128,7 +136,10 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
         (sum, module) => sum + module.completedLessons,
         0
     );
-    const overallProgress = totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100);
+    const overallProgress =
+        totalLessons === 0
+            ? 0
+            : Math.round((completedLessons / totalLessons) * 100);
 
     // Toggle module expansion
     const toggleModule = (moduleId: string) => {
@@ -218,6 +229,7 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
         </View>
     );
 
+    // Render lesson item
     const renderLesson = (lesson: Lesson, moduleId: string) => (
         <TouchableOpacity
             key={lesson.id}
@@ -231,16 +243,16 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
                 // if (lesson.status !== 'locked') {
                 //     navigation.navigate('LessonDetail', { moduleId, lessonId: lesson.id });
                 // }
-                router.push({ pathname: '/screens/singleLessonScreen', 
+                router.push({
+                    pathname: '/screens/singleLessonScreen',
                     params: {
                         lessonId: lesson.id,
                         subjectName: normalizedSubject,
                         topicName: normalizedGrade,
-                        
-                        
-                    } });
+                    },
+                });
             }}
-            disabled={lesson.status === 'locked'}
+            // disabled={lesson.status === 'locked'}
             activeOpacity={0.7}
         >
             <View style={styles.lessonContent}>
@@ -274,13 +286,18 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
         </TouchableOpacity>
     );
 
+    // Render module
     const renderModule = (module: Module) => {
         const isExpanded = expandedModule === module.id;
-        const animatedValue = animatedValues.get(module.id) || new Animated.Value(0);
+        const animatedValue =
+            animatedValues.get(module.id) || new Animated.Value(0);
 
-        const moduleProgress = module.totalLessons === 0 
-            ? 0 
-            : Math.round((module.completedLessons / module.totalLessons) * 100);
+        const moduleProgress =
+            module.totalLessons === 0
+                ? 0
+                : Math.round(
+                      (module.completedLessons / module.totalLessons) * 100
+                );
 
         return (
             <View key={module.id} style={styles.moduleContainer}>
@@ -363,41 +380,54 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>Subject and grade parameters are required</Text>
+                    <Text style={styles.errorText}>
+                        Subject and grade parameters are required
+                    </Text>
                 </View>
             </SafeAreaView>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container}>
-            <ScrollView
-                contentContainerStyle={styles.scrollContainer}
-                showsVerticalScrollIndicator={false}
-            >
-                {renderProgressHeader()}
+        <ImageBackground
+            source={require('@/assets/images/bg.png')}
+            style={styles.gradientBackground}
+            resizeMode="cover"
+        >
+            <SafeAreaView style={styles.container}>
+                <ScrollView
+                    contentContainerStyle={styles.scrollContainer}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {renderProgressHeader()}
 
-                <View style={styles.modulesSection}>
-                    <Text style={styles.sectionTitle}>Learning Modules 📚</Text>
-                    {modules.length === 0 ? (
-                        <View style={styles.noDataContainer}>
-                            <Text style={styles.noDataText}>
-                                No modules found for {normalizedSubject} - Grade {normalizedGrade}
-                            </Text>
-                        </View>
-                    ) : (
-                        modules.map(renderModule)
-                    )}
-                </View>
-            </ScrollView>
-        </SafeAreaView>
+                    <View style={styles.modulesSection}>
+                        <Text style={styles.sectionTitle}>
+                            Learning Modules 📚
+                        </Text>
+                        {modules.length === 0 ? (
+                            <View style={styles.noDataContainer}>
+                                <Text style={styles.noDataText}>
+                                    No modules found for {normalizedSubject} -
+                                    Grade {normalizedGrade}
+                                </Text>
+                            </View>
+                        ) : (
+                            modules.map(renderModule)
+                        )}
+                    </View>
+                </ScrollView>
+            </SafeAreaView>
+        </ImageBackground>
     );
 };
 
 const styles = StyleSheet.create({
+    gradientBackground: {
+        flex: 1,
+    },
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
     },
     scrollContainer: {
         flexGrow: 1,
@@ -435,13 +465,13 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     progressHeader: {
-        marginTop: Platform.OS === 'ios' ? 20 : 16,
+        marginTop: Platform.OS === 'ios' ? 20 : 60,
         marginBottom: Platform.OS === 'ios' ? 30 : 24,
     },
     subjectTitle: {
         fontSize: Platform.OS === 'ios' ? 28 : 26,
         fontWeight: 'bold',
-        color: '#1E3A8A',
+        color: '#ffffff',
         textAlign: 'center',
         marginBottom: Platform.OS === 'ios' ? 20 : 16,
     },
@@ -514,7 +544,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: Platform.OS === 'ios' ? 22 : 20,
         fontWeight: 'bold',
-        color: '#1E3A8A',
+        color: '#ffffff',
         marginBottom: Platform.OS === 'ios' ? 16 : 12,
     },
     moduleContainer: {
