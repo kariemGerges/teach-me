@@ -57,10 +57,14 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
                         const lessonData = doc.data();
                         return {
                             id: doc.id,
+                            icon: lessonData.icon ?? '📘',
                             title: lessonData.title ?? '',
+                            allLessons: lessonData.allLessons ?? [],
+
                             status: lessonData.status ?? 'locked',
                             progress: lessonData.progress ?? 0,
                             singleLesson: lessonData,
+                            totalLessons: lessonData.allLessons?.length || 0,
                         };
                     });
 
@@ -238,17 +242,14 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
                 lesson.status === 'locked' && styles.lockedLesson,
             ]}
             onPress={() => {
-                // TODO: Implement lesson selection navigation or logic here
-                // Example: navigate to lesson details screen
-                // if (lesson.status !== 'locked') {
-                //     navigation.navigate('LessonDetail', { moduleId, lessonId: lesson.id });
-                // }
                 router.push({
                     pathname: '/screens/singleLessonScreen',
+
                     params: {
-                        lessonId: lesson.id,
-                        subjectName: normalizedSubject,
-                        topicName: normalizedGrade,
+                        singleLesson: encodeURIComponent(
+                            JSON.stringify(lesson)
+                        ),
+                        normalizedSubject: normalizedSubject,
                     },
                 });
             }}
@@ -297,7 +298,7 @@ const LearningProgressScreen: React.FC<LearningProgressProps> = () => {
                 ? 0
                 : Math.round(
                       (module.completedLessons / module.totalLessons) * 100
-                );
+                  );
 
         return (
             <View key={module.id} style={styles.moduleContainer}>

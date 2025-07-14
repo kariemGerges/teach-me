@@ -159,8 +159,9 @@ const KidsLandingScreen: React.FC = () => {
             router.push({
                 pathname: '/screens/kidsSettingsScreen',
                 params: {
-                    childData: JSON.stringify(child),
-                }});
+                    childData: encodeURIComponent(JSON.stringify(child)),
+                },
+            });
         }
     };
 

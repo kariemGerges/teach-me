@@ -25,7 +25,7 @@ const THEMES = [
 const SettingsScreen: React.FC = () => {
     const params = useLocalSearchParams();
     const childData: Children = params.childData
-        ? JSON.parse(params.childData as string)
+        ? JSON.parse(decodeURIComponent(params.childData as string))
         : {
             name: 'Alex',
             grade: '3rd Grade',

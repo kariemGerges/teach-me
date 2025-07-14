@@ -499,7 +499,7 @@
 //                 <Text style={styles.completionTitle}>Lesson Complete!</Text>
 //                 <Text style={styles.rewardText}>{lesson.content.reward}</Text>
 
-//                 {lesson.type === 'quiz' && (
+//                 {normalizedSubject === 'quiz' && (
 //                     <View style={styles.scoreContainer}>
 //                         <Text style={styles.scoreText}>
 //                             Your Score: {score}/{totalSteps}
@@ -532,7 +532,7 @@
 //             return renderCompletionScreen();
 //         }
 
-//         switch (lesson.type) {
+//         switch (normalizedSubject) {
 //             case 'quiz':
 //                 return renderQuizContent();
 //             case 'interactive':
@@ -1095,21 +1095,20 @@
 
 // export default LessonScreen;
 
-
 // screens/LessonScreen.tsx
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 // import { StackNavigationProp } from '@react-navigation/stack';
 
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 
-import { Lesson as ImportedLesson } from '@/types/types';
 import {
+    EnglishLessonComponent,
     MathLessonComponent,
     ScienceLessonComponent,
-    EnglishLessonComponent,
 } from '@/components/lessons';
+import { Lesson as ImportedLesson } from '@/types/types';
 
 // Extend Lesson type to include 'type' if not present
 type Lesson = ImportedLesson & { type: 'math' | 'science' | 'english' };
@@ -1140,47 +1139,37 @@ const LessonComponentMap = {
     english: EnglishLessonComponent,
 } as const;
 
-export const LessonScreen: React.FC<LessonScreenProps> = ({
-    route,
-    navigation,
-}) => {
+const LessonScreen: React.FC<LessonScreenProps> = ({ route, navigation }) => {
+
+    // now here i have the singleLesson object from the url params
+    // now i need to use it down below to render the component
+    const { singleLesson, normalizedSubject } = useLocalSearchParams();
+
+    const parsedLesson = singleLesson
+        ? JSON.parse(decodeURIComponent(singleLesson as string))
+        : null;
     
-    const { lessonId, subject, module } = useLocalSearchParams();
+    console.log(parsedLesson);
+    
     const [lesson, setLesson] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    React.useEffect(() => {
-        // Simulate fetching lesson data and ensure required properties are present
-        // Replace this with your actual data fetching logic
-        async function fetchLesson() {
-            try {
-                setLoading(true);
-                // Example: fetch lesson data from API or local source
-                // Here we just mock the lesson object for demonstration
-                // Make sure to include content, subject, and module
-                const fetchedLesson = {
-                    title: 'Sample Math Lesson',
-                    type: subject as 'math' | 'science' | 'english',
-                    content: {}, // Replace with actual content
-                    subject: subject || 'math',
-                    module: module || 'Module 1',
-                    // ...other properties as needed
-                };
-                setLesson(fetchedLesson);
-                setLoading(false);
-            } catch (err: any) {
-                setError('Failed to load lesson.');
-                setLoading(false);
-            }
+    useEffect(() => {
+        if (parsedLesson) {
+            setLoading(true);
+            setLesson(parsedLesson);
+            setLoading(false);
+        } else {
+            setError('Invalid lesson data.');
+            setLoading(false);
         }
-        fetchLesson();
-    }, [lessonId, subject, module]);
+    }, []);
 
     const renderLessonContent = () => {
         if (!lesson) return null;
 
-        switch (lesson.type) {
+        switch (normalizedSubject) {
             case 'math':
                 return <MathLessonComponent lesson={lesson} />;
             case 'science':
@@ -1191,7 +1180,7 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({
                 return (
                     <View style={styles.errorContainer}>
                         <Text style={styles.errorText}>
-                            Unsupported lesson type: {lesson.type}
+                            Unsupported lesson type: {normalizedSubject}
                         </Text>
                     </View>
                 );
@@ -1221,13 +1210,15 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({
                 <View style={styles.header}>
                     <Text style={styles.title}>{lesson.title}</Text>
                     <Text style={styles.subtitle}>
-                        {lesson.subject.charAt(0).toUpperCase() +
-                            lesson.subject.slice(1)}{' '}
+                        {/* {lesson?.subject.charAt(0).toUpperCase() + */}
+                            {/* lesson.subject.slice(1)}{' '} */}
                         • {lesson.module}
+                        { normalizedSubject}
                     </Text>
                 </View>
             )}
             {renderLessonContent()}
+        
         </View>
     );
 };
@@ -1274,3 +1265,5 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 });
+
+export default LessonScreen;

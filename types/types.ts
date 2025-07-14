@@ -5,6 +5,9 @@ export interface Lesson {
     title: string;
     status: LessonStatus;
     progress: number; // 0-100
+    icon: string;
+    allLessons: Lesson[];
+    totalLessons: number;
 }
 
 export interface Module {
@@ -33,8 +36,6 @@ export type Grade =
     | 'grade_4'
     | 'grade_5';
 
-
-
 export interface Question {
     id: number;
     question: string;
@@ -58,9 +59,9 @@ export interface Example {
 export interface Activity {
     type: string;
     question?: string;
-    pairs?: Array<{ fraction: string; equivalent: string }>;
+    pairs?: { fraction: string; equivalent: string }[];
     problems?: { fraction: string; equivalent: string; answer: string }[];
-    challenges?: Array<{ clue: string; answer: string }>;
+    challenges?: { clue: string; answer: string }[];
     datasets?: any[];
     experiments?: string[];
     key_points?: string[];
@@ -108,8 +109,6 @@ export interface LessonScreenProps {
     navigation: any;
 }
 
-
-
 // types/lesson.ts
 export interface BaseLesson {
     id: string;
@@ -118,54 +117,67 @@ export interface BaseLesson {
     module: string;
     type: string;
     content: any; // This will hold the dynamic content
-  }
-  
-  export interface MathLesson extends BaseLesson {
+}
+
+export interface MathLesson extends BaseLesson {
     type: 'math';
     content: {
-      equation?: string;
-      steps?: string[];
-      examples?: {
-        problem: string;
-        solution: string;
-      }[];
-      practice?: {
-        question: string;
-        answer: string;
-      }[];
+        feedback?: {
+            correct: string;
+            incorrect: string;
+            hint: string;
+        };
+        instructions?: string[];
+        interactiveElements?: {
+            answer: string;
+            counting: string;
+            grouping: string;
+        }[];
+        items?: [];
+        question?: string;
+        visualStory: {
+            characters: string;
+            scenario: string;
+            setting: string;
+        };
+        enhanced: true;
+        id: string;
+        in_progress: boolean;
+        lastUpdated: number;
+        locked: boolean;
     };
-  }
-  
-  export interface ScienceLesson extends BaseLesson {
+}
+
+export interface ScienceLesson extends BaseLesson {
     type: 'science';
     content: {
-      theory?: string;
-      diagrams?: string[];
-      experiments?: {
-        title: string;
-        materials: string[];
-        procedure: string[];
-        observation: string;
-      }[];
-      facts?: string[];
+        theory?: string;
+        diagrams?: string[];
+        experiments?: {
+            title: string;
+            materials: string[];
+            procedure: string[];
+            observation: string;
+        }[];
+        facts?: string[];
     };
-  }
-  
-  export interface EnglishLesson extends BaseLesson {
+}
+
+export interface EnglishLesson extends BaseLesson {
     type: 'english';
     content: {
-      passage?: string;
-      vocabulary?: { word: string; meaning: string; }[];
-      grammar?: {
-        rule: string;
-        examples: string[];
-      };
-      exercises?: {
-        question: string;
-        options?: string[];
-        answer: string;
-      }[];
+        passage?: string;
+        vocabulary?: { word: string; meaning: string }[];
+        grammar?: {
+            rule: string;
+            examples: string[];
+        };
+        exercises?: {
+            question: string;
+            options?: string[];
+            answer: string;
+        }[];
     };
-  }
-  
-  export type Lesson3 = MathLesson | ScienceLesson | EnglishLesson;
+}
+
+export type Lesson3 = MathLesson | ScienceLesson | EnglishLesson;
